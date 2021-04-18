@@ -15,6 +15,74 @@ import time
 import pdb
 import json
 
+import random
+import threading
+import psutil, GPUtil
+import pandas as pd
+
+ini_rc, ini_wc, ini_rb, ini_wb = psutil.disk_io_counters()[:4]
+ini_bs, ini_br = psutil.net_io_counters()[:2]
+
+def sample_metrics(unit="MB"):
+    global ini_rc, ini_wc, ini_rb, ini_wb, ini_bs, ini_br
+    weight = 1
+    if unit == "MB":
+        weight = 1024 * 1024
+    elif unit == "GB":
+        weight = 1024 * 1024 * 1024
+    network_stat = psutil.net_io_counters()
+    disk_io_stat = psutil.disk_io_counters()
+    result = {
+        "time": str(datetime.datetime.utcnow()),
+        "cpu": psutil.cpu_percent(interval=1),
+        "mem": psutil.virtual_memory().used / weight,
+        "ram": psutil.virtual_memory().active / weight,
+        "disk": psutil.disk_usage("/").used / weight,
+        "disk_io": {
+            "rc": disk_io_stat[0] - ini_rc,
+            "wc": disk_io_stat[1] - ini_wc,
+            "rb": disk_io_stat[2] - ini_rb,
+            "wb": disk_io_stat[3] - ini_wb
+        },
+        "network": {
+            "sent": network_stat.bytes_sent / weight - ini_bs,
+            "recv": network_stat.bytes_recv / weight - ini_br
+        }
+    }
+    # if self._use_gpu:
+    gpus = GPUtil.getGPUs()
+    if len(gpus) > 0:
+        result["gpu load"] = gpus[0].load * 100
+        result["gpu memutil"] = gpus[0].memoryUtil * 100
+    return result
+
+def compute_metrics():
+    global running
+    running = True
+    currentProcess = psutil.Process()
+    lst = []
+    # start loop
+    while running:
+        # *measure/store all needed metrics*
+        lst.append(sample_metrics())
+        time.sleep(1)
+    df = pd.DataFrame(lst)
+    df.to_csv('demo_voc2007_gcn_metrics_2.csv', index=False)
+
+def start():
+    global t
+    # create thread and start it
+    t = threading.Thread(target=compute_metrics)
+    t.start()
+
+def stop():
+    global running
+    global t
+    # use `running` to stop loop in thread so thread will end
+    running = False
+    # wait for thread's end
+    t.join()
+
 class TimeLiner:
     _timeline_dict = None
 
@@ -243,5 +311,9 @@ def train_main(argv=None):
 
 
 if __name__ == '__main__':
-    tf.compat.v1.app.run(main=train_main)
+    start()
+    try:
+        tf.compat.v1.app.run(main=train_main)
+    finally:
+        stop()
 

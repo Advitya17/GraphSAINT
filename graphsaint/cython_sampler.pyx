@@ -24,7 +24,8 @@ cdef extern from "stdlib.h":
 cimport graphsaint.cython_utils as cutils
 import graphsaint.cython_utils as cutils
 
-
+# cdef bool comparator(int a, int b): 
+#     return a < b
 
 cdef class Sampler:
     cdef int num_proc,num_sample_per_proc
@@ -312,7 +313,7 @@ cdef class MRW(Sampler):
                 arr_ind1[cnt] = -num_neighs_next
                 j = j + 1
             self.node_sampled[p*self.num_sample_per_proc+r].insert(self.node_sampled[p*self.num_sample_per_proc+r].end(),frontier.begin(),frontier.end())
-            sort(self.node_sampled[p*self.num_sample_per_proc+r].begin(),self.node_sampled[p*self.num_sample_per_proc+r].end())
+            sort(self.node_sampled[p*self.num_sample_per_proc+r].begin(),self.node_sampled[p*self.num_sample_per_proc+r].end())#, comparator)
             self.node_sampled[p*self.num_sample_per_proc+r].erase(unique(self.node_sampled[p*self.num_sample_per_proc+r].begin(),\
                     self.node_sampled[p*self.num_sample_per_proc+r].end()),self.node_sampled[p*self.num_sample_per_proc+r].end())
             r = r + 1
@@ -354,7 +355,7 @@ cdef class RW(Sampler):
                     idepth = idepth + 1
                 iroot = iroot + 1
             r = r + 1
-            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())
+            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())#, comparator)
             self.node_sampled[idx_subg].erase(unique(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end()),self.node_sampled[idx_subg].end())
 
 
@@ -395,7 +396,7 @@ cdef class Edge(Sampler):
                 self.node_sampled[idx_subg].push_back(self.row_train_vec[i])
                 self.node_sampled[idx_subg].push_back(self.col_train_vec[i])
                 i = i + 1
-            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())
+            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())#, comparator)
             self.node_sampled[idx_subg].erase(unique(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end()),self.node_sampled[idx_subg].end())
             g = g + 1
 
@@ -437,7 +438,7 @@ cdef class Edge2(Sampler):
                 self.node_sampled[idx_subg].push_back(self.row_train_vec[e])
                 self.node_sampled[idx_subg].push_back(self.col_train_vec[e])
                 i = i + 1
-            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())
+            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())#, comparator)
             self.node_sampled[idx_subg].erase(unique(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end()),self.node_sampled[idx_subg].end())
             r = r + 1
 
@@ -469,7 +470,7 @@ cdef class Node(Sampler):
                 self.node_sampled[idx_subg].push_back(self.node_train_vec[lower_bound(self.p_dist_cumsum_vec.begin(),self.p_dist_cumsum_vec.end(),sample)-self.p_dist_cumsum_vec.begin()])
                 i = i + 1
             r = r + 1
-            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())
+            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())#, comparator)
             self.node_sampled[idx_subg].erase(unique(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end()),self.node_sampled[idx_subg].end())
 
 # -----------------------------------------------------
@@ -494,5 +495,5 @@ cdef class FullBatch(Sampler):
                 self.node_sampled[idx_subg].push_back(self.node_train_vec[sample])
                 i = i + 1
             r = r + 1
-            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())
+            sort(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end())#, comparator)
             self.node_sampled[idx_subg].erase(unique(self.node_sampled[idx_subg].begin(),self.node_sampled[idx_subg].end()),self.node_sampled[idx_subg].end())

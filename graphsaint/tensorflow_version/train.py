@@ -8,6 +8,8 @@ from tensorflow.python.client import timeline
 
 import sys, os, random
 import tensorflow as tf
+#import tensorflow.compat.v1 as tf
+#tf.disable_eager_execution()
 import numpy as np
 import time
 import pdb

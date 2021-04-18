@@ -5,6 +5,8 @@ import time
 import math
 import pdb
 from math import ceil
+#import pyximport
+#pyximport.install()
 import graphsaint.cython_sampler as cy
 
 

@@ -35,6 +35,7 @@ def sample_metrics(unit="MB"):
     result = {
         "time": str(datetime.datetime.utcnow()),
         "cpu": psutil.cpu_percent(interval=1),
+        "percpu": np.mean(psutil.cpu_percent(interval=1, percpu=True)),
         "mem": psutil.virtual_memory().used / weight,
         "ram": psutil.virtual_memory().active / weight,
         "disk": psutil.disk_usage("/").used / weight,

@@ -46,8 +46,8 @@ def sample_metrics(unit="MB"):
             "wb": disk_io_stat[3] - ini_wb
         },
         "network": {
-            "sent": network_stat.bytes_sent / weight - ini_bs,
-            "recv": network_stat.bytes_recv / weight - ini_br
+            "sent": network_stat.bytes_sent - ini_bs,
+            "recv": network_stat.bytes_recv - ini_br
         }
     }
     # if self._use_gpu:

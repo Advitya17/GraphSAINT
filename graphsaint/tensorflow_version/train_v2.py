@@ -10,6 +10,7 @@ import sys, os, random
 import tensorflow as tf
 #import tensorflow.compat.v1 as tf
 tf.compat.v1.disable_eager_execution()
+#tf.compat.v1.enable_eager_execution()
 import numpy as np
 import time
 import pdb
@@ -162,6 +163,12 @@ def prepare(train_data,train_params,arch_gcn):
     adj_train = adj_train.astype(np.int32)
     adj_full_norm = adj_norm(adj_full)
     num_classes = class_arr.shape[1]
+
+    feats = tf.data.Dataset.from_tensor_slices(feats)#.astype(np.float32))
+    feats = feats.repeat()
+    feats = feats.batch(4)
+    feats = feats.make_one_shot_iterator()
+    feats = feats.get_next()
 
     placeholders = construct_placeholders(num_classes)
     minibatch = Minibatch(adj_full_norm, adj_train, role, class_arr, placeholders, train_params)

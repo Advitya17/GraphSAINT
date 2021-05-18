@@ -164,17 +164,11 @@ def prepare(train_data,train_params,arch_gcn):
     adj_full_norm = adj_norm(adj_full)
     num_classes = class_arr.shape[1]
 
-    feats = tf.data.Dataset.from_tensor_slices(feats)#.astype(np.float32))
-    feats = feats.repeat()
-    feats = feats.batch(4)
-    feats = feats.make_one_shot_iterator()
-    feats = feats.get_next()
-
     placeholders = construct_placeholders(num_classes)
     minibatch = Minibatch(adj_full_norm, adj_train, role, class_arr, placeholders, train_params)
     model = GraphSAINT(num_classes, placeholders,
                 feats, arch_gcn, train_params, adj_full_norm, logging=True)
-
+    
     # Initialize session
     sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(device_count={"CPU":40},inter_op_parallelism_threads=44,intra_op_parallelism_threads=44,log_device_placement=args_global.log_device_placement))
     ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
@@ -211,7 +205,7 @@ def train(train_phases,model,minibatch,\
 
     epoch_ph_start = 0
     f1mic_best, e_best = 0, 0
-    time_calc_f1, time_train, time_prepare = 0, 0, 0
+    time_calc_f1, time_train, time_prepare, EPOCH_TIMES = 0, 0, 0, [] ###
     options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE,report_tensor_allocations_upon_oom=True)
     run_metadata = tf.compat.v1.RunMetadata()
     many_runs_timeline=[]       # only used when TF timeline is enabled
@@ -222,6 +216,7 @@ def train(train_phases,model,minibatch,\
         #       when closer to convergence. -- This might speed up convergence. 
         minibatch.set_sampler(phase)
         num_batches = minibatch.num_training_batches()
+        EPOCH_TIMES.append(str(datetime.datetime.utcnow()))
         printf('START PHASE {:4d}'.format(ip),style='underline')
         for e in range(epoch_ph_start,int(phase['end'])):
             printf('Epoch {:4d}'.format(e),style='bold')
@@ -252,6 +247,7 @@ def train(train_phases,model,minibatch,\
                     l_f1mic_tr.append(f1_mic)
                     l_f1mac_tr.append(f1_mac)
                     l_size_subg.append(minibatch.size_subgraph)
+            EPOCH_TIMES.append(str(datetime.datetime.utcnow())) ###
             time_train += time_train_ep
             time_prepare += time_prepare_ep
             if args_global.cpu_eval:      # Full batch evaluation using CPU
@@ -300,6 +296,7 @@ def train(train_phases,model,minibatch,\
     loss_test, f1mic_test, f1mac_test, duration = evaluate_full_batch(sess_eval,model,minibatch,many_runs_timeline,mode='test')
     printf("Full test stats: \n  F1_Micro = {:.4f}\tF1_Macro = {:.4f}".format(f1mic_test,f1mac_test),style='red')
     printf('Total training time: {:6.2f} sec'.format(time_train),style='red')
+    print('Epoch timestamps: ', repr(EPOCH_TIMES)) ###
     #ret = {'loss_val_opt':loss_val,'f1mic_val_opt':f1mic_val,'f1mac_val_opt':f1mac_val,\
     #        'loss_test_opt':loss_test,'f1mic_test_opt':f1mic_test,'f1mac_test_opt':f1mac_test,\
     #        'epoch_best':e_best,

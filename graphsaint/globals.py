@@ -21,7 +21,7 @@ timestamp = datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %
 
 
 parser = argparse.ArgumentParser(description="argument for GraphSAINT training")
-parser.add_argument("--num_cpu_core",default=20,type=int,help="Number of CPU cores for parallel sampling")
+parser.add_argument("--num_cpu_core",default=40,type=int,help="Number of CPU cores for parallel sampling") ###
 parser.add_argument("--log_device_placement",default=False,action="store_true",help="Whether to log device placement")
 parser.add_argument("--data_prefix",required=True,type=str,help="prefix identifying training data")
 parser.add_argument("--dir_log",default=".",type=str,help="base directory for logging and saving embeddings")

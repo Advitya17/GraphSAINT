@@ -27,7 +27,8 @@ class GraphSAINT:
             self.aggregator_cls = layers.HighOrderAggregator
             self.mulhead = 1
         self.lr = train_params['lr']
-        self.node_subgraph = placeholders['node_subgraph']
+        #b_size = 4
+        self.node_subgraph = placeholders['node_subgraph'] #% b_size ###
         self.num_layers = len(arch_gcn['arch'].split('-'))
         self.weight_decay = train_params['weight_decay']
         self.jk = None if 'jk' not in arch_gcn else arch_gcn['jk']
@@ -43,7 +44,29 @@ class GraphSAINT:
         self.adj_subgraph_6=placeholders['adj_subgraph_6']
         self.adj_subgraph_7=placeholders['adj_subgraph_7']
         self.dim0_adj_sub = placeholders['dim0_adj_sub'] #adj_full_norm.shape[0]/8
+        
+        ###
+        # Read TFRecord file
+        def _parse_tfr_element(element):
+            parse_dic = {
+                'b_feature': tf.io.FixedLenFeature([], tf.string), # Note that it is tf.string, not tf.float32
+                }
+            example_message = tf.io.parse_single_example(element, parse_dic)
+
+            b_feature = example_message['b_feature'] # get byte string
+            feature = tf.io.parse_tensor(b_feature, out_type=tf.float32) # restore 2D array from byte string
+            return feature
+
+
+        #self.features = tf.compat.v1.data.TFRecordDataset('./data/big_feats.tfrecords')
+        #self.features = self.features.map(_parse_tfr_element)
+        #self.features = self.features.repeat()
+        #self.features = self.features.batch(b_size)
+        #self.features = self.features.make_one_shot_iterator()
+        #self.features = self.features.get_next()
+        ###
         self.features = tf.Variable(tf.constant(features, dtype=DTYPE), trainable=False)
+        
         self.dualGPU=args_global.dualGPU
         _indices = np.column_stack(adj_full_norm.nonzero())
         _data = adj_full_norm.data

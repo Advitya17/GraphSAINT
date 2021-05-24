@@ -7,8 +7,9 @@ import os
 import yaml
 import scipy.sparse as sp
 from graphsaint.globals import *
+from numba import cuda
 
-
+#@cuda.jit(device=True)
 def load_data(prefix, normalize=True):
     """
     Load the various data files residing in the `prefix` directory.
@@ -74,6 +75,7 @@ def load_data(prefix, normalize=True):
     return adj_full, adj_train, feats, class_map, role
 
 
+#@cuda.jit(device=True)
 def process_graph_data(adj_full, adj_train, feats, class_map, role):
     """
     setup vertex property map for output classes, train/val/test masks, and feats
@@ -106,7 +108,7 @@ def parse_layer_yml(arch_gcn,dim_input):
     order_layer = [int(o) for o in arch_gcn['arch'].split('-')]
     return [dim_input]+dims_layer,order_layer,act_layer,bias_layer,aggr_layer
 
-
+#@cuda.jit(device=True)
 def parse_n_prepare(flags):
     with open(flags.train_config) as f_train_config:
         train_config = yaml.load(f_train_config)

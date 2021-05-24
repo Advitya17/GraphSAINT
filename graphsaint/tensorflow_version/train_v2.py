@@ -1,3 +1,6 @@
+#import sys
+#sys.path.append('$HOME/workspace/GraphSAINT/')
+
 from graphsaint.globals import *
 from graphsaint.tensorflow_version.inits_v2 import *
 from graphsaint.tensorflow_version.model_v2 import GraphSAINT
@@ -20,9 +23,11 @@ import random
 import threading
 import psutil, GPUtil
 import pandas as pd
+from numba import cuda
 
 ini_rc, ini_wc, ini_rb, ini_wb = psutil.disk_io_counters()[:4]
 ini_bs, ini_br = psutil.net_io_counters()[:2]
+interval = 0.01
 
 def sample_metrics(unit="MB"):
     global ini_rc, ini_wc, ini_rb, ini_wb, ini_bs, ini_br
@@ -35,8 +40,8 @@ def sample_metrics(unit="MB"):
     disk_io_stat = psutil.disk_io_counters()
     result = {
         "time": str(datetime.datetime.utcnow()),
-        "cpu": psutil.cpu_percent(interval=1),
-        "percpu": np.mean(psutil.cpu_percent(interval=1, percpu=True)),
+        "cpu": psutil.cpu_percent(interval=interval),
+        "percpu": np.mean(psutil.cpu_percent(interval=interval, percpu=True)),
         "mem": psutil.virtual_memory().used / weight,
         "ram": psutil.virtual_memory().active / weight,
         "disk": psutil.disk_usage("/").used / weight,
@@ -67,7 +72,7 @@ def compute_metrics():
     while running:
         # *measure/store all needed metrics*
         lst.append(sample_metrics())
-        time.sleep(1)
+        time.sleep(interval)
     df = pd.DataFrame(lst)
     df.to_csv('demo_voc2007_gcn_metrics_2.csv', index=False)
 
@@ -157,6 +162,7 @@ def construct_placeholders(num_classes):
 #########
 # TRAIN #
 #########
+#@cuda.jit(device=True)
 def prepare(train_data,train_params,arch_gcn):
     adj_full,adj_train,feats,class_arr,role = train_data
     adj_full = adj_full.astype(np.int32)
@@ -195,7 +201,7 @@ def prepare(train_data,train_params,arch_gcn):
     return model,minibatch, sess, [merged,misc_stats],ph_misc_stat, summary_writer
 
 
-
+#@cuda.jit(device=True)
 def train(train_phases,model,minibatch,\
             sess,train_stat,ph_misc_stat,summary_writer):
     import time
@@ -308,6 +314,7 @@ def train(train_phases,model,minibatch,\
 # MAIN #
 ########
 
+#@cuda.jit
 def train_main(argv=None):
     train_params,train_phases,train_data,arch_gcn = parse_n_prepare(args_global)
     model,minibatch,sess,train_stat,ph_misc_stat,summary_writer = prepare(train_data,train_params,arch_gcn)
@@ -316,9 +323,11 @@ def train_main(argv=None):
 
 
 if __name__ == '__main__':
+    #threadsperblock = 32
+    #blockspergrid = 300000000 #(an_array.size + (threadsperblock - 1)) // threadsperblock
     start()
     try:
-        tf.compat.v1.app.run(main=train_main)
+        tf.compat.v1.app.run(main=train_main)#[blockspergrid, threadsperblock])
     finally:
         stop()
 
